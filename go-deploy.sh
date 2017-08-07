@@ -12,6 +12,7 @@ set -e
 OS=linux
 ARCH=386
 PKG_NAME=build
+TMP=_tmp
 KEY=secret.pem
 HOST=user@ip
 FOLDER=myapp
@@ -23,8 +24,12 @@ echo "-> Building package"
 gox -os="$OS" -arch="$ARCH" -output="$PKG_NAME"
 
 echo "-> Deploying package"
-ssh -i $KEY $HOST "pkill $PKG_NAME"
-scp -i $KEY $PKG_NAME $HOST:$FOLDER
-ssh -i $KEY $HOST "daemonize -c ~/$FOLDER ~/$FOLDER/$PKG_NAME"
+scp -i $KEY $PKG_NAME $HOST:$FOLDER/$PKG_NAME$TMP
+ssh -i $KEY $HOST "
+  pkill $PKG_NAME;
+  rm ~/$FOLDER/$PKG_NAME;
+  mv ~/$FOLDER/$PKG_NAME$TMP ~/$FOLDER/$PKG_NAME;
+  daemonize -c ~/$FOLDER ~/$FOLDER/$PKG_NAME
+"
 
 echo "-> OK: Package deployed!"
